@@ -69,4 +69,4 @@ This section has moved here: https://facebook.github.io/create-react-app/docs/tr
 
 
 
-###Add some notice on how to launch the app
+### Add some notice on how to launch the app
