@@ -1,0 +1,339 @@
+pragma solidity ^0.5.11;
+
+
+contract Cryptomons {
+    enum Species { Wimpy, Chikisor, ChikenSaiyan,Foxy , DreadFox, Kiubite,Pythoneche, Crotalux , Balboarus}
+    enum Attacks {Quick, HeadShot, Strength} 
+    enum Mode {Attack,Protect,Breed,Trading}
+    event AttackDebug(bool is_in);
+    
+    struct Card {
+        uint id;
+        address payable owner;
+        address payable sharer; 
+        Species species;
+        uint price;
+        uint level;
+        uint attack;
+        uint defense;
+        Mode mode;
+        uint experience; 
+        int HP;
+        uint race;
+        uint remainingFightsSharer;
+        uint idOfProtector;
+        
+    }
+    
+    
+    address payable public  manager;
+    mapping(uint => Card) public cards;
+    uint public totalCards = 0;
+    uint max = 2**256 - 1;
+    uint public minExp2Evol = 1000;
+    uint nonce = 0;
+    uint public resLastAttack;
+    bool canCreateCard = false; 
+    
+    modifier onlyManager() { // Modifier
+        require(
+            msg.sender == manager,
+            "Only manager can call this."
+        );
+        _;
+    }
+    
+    function getManagerAdress() public view returns(address){
+        return msg.sender;
+    }
+    
+    
+    modifier onlyOwner(uint id) {
+        require ( msg.sender == cards[id].owner);
+        _;
+    }
+    
+    constructor() public {
+        manager = msg.sender;
+        createCard(10,400,200,1000,0,0);
+        createCard(8,550,100,800,1,0);
+        createCard(10,400,200,1000,0,0);
+        createCard(15,300,250,1200,2,0);
+        createCard(15,300,250,1200,2,0);
+        createCard(8,550,100,800,1,0);    
+        createCard(10,400,200,1000,0,0);
+        createCard(8,550,100,800,1,0);
+        createCard(10,400,200,1000,0,0);
+        createCard(15,300,250,1200,2,0);
+        createCard(15,300,250,1200,2,0);
+        createCard(8,550,100,800,1,0); 
+    }
+
+    function createCard(uint price, uint attack, uint defense, int HP, uint race, uint level) public {
+        require(totalCards <=  max);
+        require((canCreateCard) || (msg.sender == manager));
+        if (canCreateCard) {
+            canCreateCard = false;
+        }
+        Card storage card = cards[totalCards];
+        card.id = totalCards;
+        totalCards += 1;
+        card.owner = msg.sender;
+        card.price = price;
+        card.mode = Mode.Attack;
+        card.attack = attack;
+        card.defense = defense;
+        card.experience = 0;
+        card.level = level;
+        card.HP = HP;
+        card.race = race;       //Chicken is 0, Fox is 1 and Snake is 2. I could have used an enum but as I am not using it quite a lot and have only these three races, I have decided to keep this setting.
+        card.species = Species(uint(level + race*3));
+        card.idOfProtector = card.id;
+    }
+    
+    
+    function buyCard(uint id) public payable {
+        require(id < totalCards);
+        require(cards[id].mode == Mode.Trading);
+        require(msg.value > cards[id].price);
+        address payable seller = cards[id].owner;
+        cards[id].owner = msg.sender;
+        seller.transfer(msg.value);
+        cards[id].mode = Mode.Attack;
+    }
+    
+    function canEvolve(uint experience,uint level) public view returns(bool){
+        return (experience >= minExp2Evol) && (level < 3);
+    }
+    
+    function BreedingCard(uint id) public onlyOwner(id){
+        require(canEvolve(cards[id].experience, cards[id].level));
+        cards[id].mode = Mode.Breed;
+        cards[id].experience = 1000;
+        }
+    
+    function updateBreeding(uint id) public onlyOwner(id){
+        require(cards[id].mode == Mode.Breed);
+        if (cards[id].experience==0) {
+            evolve(id);
+        }
+        else {
+            cards[id].experience -= 500;
+        }
+    }
+    
+    function evolve(uint id) public onlyOwner(id) {
+        cards[id].mode = Mode.Attack;
+        cards[id].experience = 0;
+        if (cards[id].idOfProtector != id){
+            cards[cards[id].idOfProtector].mode = Mode.Attack;
+            cards[id].idOfProtector = id;
+        }
+        canCreateCard = true;
+        createCard(uint(cards[id].price * 3),uint(cards[id].attack * 2),uint(cards[id].defense * 2),cards[id].HP + 500,cards[id].race,cards[id].level + 1);
+        cards[id].owner = manager;    
+    }
+    
+    function tradingCard(uint id) public onlyOwner(id){
+        require(id < totalCards);
+        require(cards[id].mode == Mode.Attack);
+        cards[id].mode = Mode.Trading;
+    }
+    
+    function fightingMode(uint id) public onlyOwner(id){
+        require(id < totalCards);
+        cards[id].mode = Mode.Attack;
+    }
+    
+    function setEXP(uint id, uint newExp) public onlyManager(){  
+        /* This function is used to test our smartcontract with the Remix backend service in order to Breed our monsters even if they have no experience. */
+        require(id < totalCards);
+        cards[id].experience = newExp;
+    }
+    
+    function Protecting(uint id_Protector, uint id_Protected) public onlyOwner(id_Protector){
+        require(cards[id_Protected].idOfProtector == id_Protected);    //can only have one protector
+        require(cards[id_Protected].mode == Mode.Breed);
+        require(cards[id_Protector].mode == Mode.Attack);
+        cards[id_Protector].mode = Mode.Protect;
+        cards[id_Protected].idOfProtector = id_Protector;
+    }
+    
+    function unProtect(uint id_Protected) public onlyOwner(id_Protected){
+        require(cards[id_Protected].mode == Mode.Breed);
+        if (cards[id_Protected].idOfProtector != id_Protected) {
+            cards[id_Protected].idOfProtector = id_Protected;
+        }
+    }
+    
+    function getOwner(uint id) public view returns(address){
+        return(cards[id].owner);
+    }
+    
+    function getHP(uint id) public view returns(int){
+        return(cards[id].HP);
+    }
+    
+    function getMode(uint id) public view returns(Mode){
+        return(cards[id].mode);
+    }
+    
+    function shareCard(uint id) public payable {
+        require(id < totalCards);
+        require(msg.value > (cards[id].price/3));
+        require(msg.sender != cards[id].owner);
+        require(cards[id].mode == Mode.Trading);
+        address payable seller = cards[id].owner;
+        cards[id].sharer = msg.sender;
+        seller.transfer(cards[id].price / 3);
+        cards[id].remainingFightsSharer = 3;
+        cards[id].mode = Mode.Attack;
+    }
+    
+
+    function random() internal view returns  (uint) {
+        bytes32 block = blockhash(block.number);
+        address send = msg.sender;
+        uint time = now;
+        uint rand = uint(keccak256(abi.encodePacked(block,time,send,nonce))) % 1000;
+        return rand;
+    }
+    
+    
+    function Attack(uint id_attack,uint id_defense, uint ChoiceofAttack) public view returns(uint) {
+        require((ChoiceofAttack >= 0) && (ChoiceofAttack < 3));
+        Card storage attacker = cards[id_attack];
+        Card storage defenser = cards[id_defense];
+        uint lower_bound;
+        uint attack;
+        
+
+        if (ChoiceofAttack == uint(Attacks.HeadShot)){
+            attack = uint(defenser.HP);
+            lower_bound = 500;        // 1 chance over 2 to kill the monster
+        }
+        else {
+            attack = attacker.attack;
+            lower_bound = 500;
+            lower_bound += defenser.defense;
+            if (ChoiceofAttack == 2){
+                attack = uint((attack * 12)/10);
+                lower_bound += 50;
+            }
+            else {
+                attack = uint((attack*8)/10);
+                lower_bound -= 50;
+            }
+        }
+        if (defenser.mode == Mode.Breed) {
+            lower_bound += 150;
+        }
+        
+        if ( ((attacker.race == 0) && (defenser.race == 2)) ||  ((attacker.race == 2) && (defenser.race == 1)) || ((attacker.race == 1) && (defenser.race == 0))){
+            attack = uint((attack*15)/10);
+        }
+        uint random_number = random();
+        
+        bool reached = (random_number >= lower_bound);
+        if (reached){
+            if ((defenser.HP - int(attack)) >= 0){
+                return(attack);
+            }
+            else {
+                return(uint(defenser.HP));
+            }
+        }
+        else {
+            return(0);
+        }   
+    }
+    
+    function Fight(uint id_attack,uint id_defense, uint ChoiceofAttack) public returns(uint) {
+        uint ChoiceofDefense = uint(Attacks.Quick);
+        uint id_finalDefense = cards[id_defense].idOfProtector;
+        Card storage defenser = cards[id_finalDefense];
+        Card storage attacker = cards[id_attack];
+        int initialHP_attacker = cards[id_attack].HP;
+        int initialHP_defenser = cards[id_finalDefense].HP;
+        address payable nullAdress;
+        uint resAttack;
+        require((attacker.owner == msg.sender) || (attacker.sharer == msg.sender));
+
+        require(attacker.mode == Mode.Attack);
+        require(defenser.mode != Mode.Trading);
+        
+        while ((attacker.HP >= 0) || (defenser.HP >= 0)){
+            resAttack = Attack(id_attack,id_finalDefense,ChoiceofAttack);
+            resLastAttack = resAttack;
+            nonce ++;
+            if (resAttack==0) {
+                defenser.experience += 500;
+            }
+            else{
+                attacker.experience += 500;
+                defenser.HP -= int(resAttack);
+            }
+            
+            
+            if  ((attacker.HP <= 0) || (defenser.HP <= 0)){
+                break;
+            }
+            
+            else{
+                resAttack = Attack(id_attack,id_attack,ChoiceofDefense);
+                resLastAttack = resAttack;
+                nonce ++;
+                if (resAttack==0) {
+                    attacker.experience += 500;
+                }
+                else{
+                    defenser.experience += 500;
+                    attacker.HP -= int(resAttack);
+                }
+            
+            }
+        }
+        if (attacker.HP <= 0) {
+            if (attacker.sharer == msg.sender){
+                attacker.sharer = nullAdress;
+            }
+            else {
+            attacker.owner = defenser.owner;
+            }
+            attacker.mode = Mode.Attack;
+            attacker.HP = initialHP_attacker;
+            defenser.HP = initialHP_defenser;
+            resLastAttack = 2;
+        }
+        if (defenser.HP <= 0) {
+            if (id_defense != id_finalDefense) { 
+                //this means that the defenser's protector is dead
+                cards[id_defense].idOfProtector = id_defense;
+            }
+            if (attacker.sharer == msg.sender){
+                defenser.owner = attacker.sharer;
+            }
+            else{
+            defenser.owner = attacker.owner;
+            }
+            defenser.mode = Mode.Attack;
+            attacker.HP = initialHP_attacker;
+            defenser.HP = initialHP_defenser;
+            resLastAttack = 1;
+        }
+        if (attacker.sharer == msg.sender){
+            require(attacker.remainingFightsSharer > 0);
+            attacker.remainingFightsSharer -= 1 ;
+            if (attacker.remainingFightsSharer==0) {
+            
+                attacker.sharer = nullAdress;
+            }
+        }
+        return(resLastAttack);
+    }
+    
+    
+    
+    
+    
+} 

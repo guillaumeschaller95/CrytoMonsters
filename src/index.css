@@ -1,0 +1,175 @@
+﻿body {
+     background-color: paleturquoise;
+     padding: 20px;
+     margin: 0;
+}
+
+h1, h2, p, ul, li {
+    font-family: sans-serif;
+}
+
+card.cardname {
+    font-weight: 900;
+}
+
+div.card {
+    position:relative;
+    border-radius: 10px;
+    background-color: goldenrod;
+    max-width: 350px;
+    min-width:200px;
+    overflow:auto;
+    display:inline-block;
+    max-height: 800px;
+    min-height: 480px;
+    margin-right:20px;
+    border-style:inset;
+    border-color:black;
+    justify-content:center;
+}
+
+#cardname img {
+    position: absolute;
+    border-style: inset;
+    margin-left:10px;
+    margin-top:10px;
+}
+
+div.card_img {
+    position: absolute;
+    border-style: inset;
+    border-width:5px;
+    top: 100px;
+    left: 100px;
+    transform: translate(-50%, -50%);
+    justify-content:center;
+}
+
+div.card_info {
+    color: black;
+    font-weight: bold;
+    text-decoration: dashed;
+    padding: 20px;
+    display: inline-table;
+    max-width: 100vh;
+    position:absolute;
+    top:180px;
+    left:0px;
+}
+
+ul.header li {
+    display: inline;
+    list-style-type: none;
+    margin: 0;
+}
+
+h1 li a{
+    color: crimson;
+}
+ul.header {
+    background-color: red;
+    padding: 0;
+}
+
+ul.header li a {
+    color: #FFF;
+    font-weight: bold;
+    text-decoration: dashed;
+    padding: 20px;
+    display: inline-table;
+    max-width : 100vh;
+
+ 
+}
+
+.MyInfo {
+    color: #FFF;
+    font-weight: bold;
+    text-decoration: dashed;
+    padding: 20px;
+    display: inline-table;
+    max-width: 100vh;
+}
+
+
+.tablinks {
+    background: red;
+    font-weight: bold;
+    text-decoration: dashed;
+    padding: 20px;
+    display: inline-table;
+    max-width: 100vh;
+}
+
+.content h2 {
+    padding: 0;
+    margin: 0;
+}
+
+.content li {
+    margin-bottom: 10px;
+}
+
+.active {
+    background-color: green;
+}
+.App-logo {
+    pointer-events: none;
+    left: 50px;
+    top: 20px;
+}
+.background {
+    pointer-events: none;
+    position: relative;
+    left:500px;
+    top: 200px;
+}
+
+div.card_img {
+    justify-content:center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .App-logo {
+        animation: App-logo-spin infinite 0.5s ;
+    }
+}
+@keyframes App-logo-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+#imgbox {
+    vertical-align: middle;
+    position: absolute;
+    border: 1px solid #999;
+    background: #FFFFFF;
+    filter: Alpha(Opacity=100);
+    visibility: hidden;
+    height: 200px;
+    width: 200px;
+    z-index: 50;
+    overflow: hidden;
+    text-align: center;
+}
+
+#contract_img{
+    visibility:visible;
+}
+div.contract_box {
+    position:relative;
+    height: 320px;
+    width: 325px;
+    top: 95%;
+    left: 50%;
+    overflow:scroll;
+}
+
+div.contract_buttons{
+    display : block;
+    position:relative;
+}
